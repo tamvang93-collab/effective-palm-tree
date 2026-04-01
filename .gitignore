@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output (có thể build lại bằng npm run build)
+dist/
+
+# Env & secrets — không commit mật khẩu/JWT
+.env
+.env.local
+.env.*.local
+
+# SQLite DB local (kèm file phụ WAL/SHM)
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
+backend/data/test*.db
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Vite cache
+.vite/

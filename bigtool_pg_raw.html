@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh Sách Game - META NỔ HỦ</title>
+  <link rel="icon" type="image/png" href="assets/img/logo.png">
+  <link rel="stylesheet" href="assets/css/game-list.css">
+  <link rel="stylesheet" href="assets/css/game-modal.css">
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="game-header">
+    <div class="header-container">
+      <div class="logo-section">
+        <button class="back-btn" onclick="window.location.href='game-lobby.html'">
+          ← Quay lại
+        </button>
+        <h1 class="game-logo">META NỔ HỦ</h1>
+        <span class="system-text">GAME SYSTEM</span>
+      </div>
+      
+      <div class="user-section">
+        <div class="user-badges">
+          <span class="vip-badge" id="userVipLevel">VIP 0</span>
+          <span class="xu-balance" id="xuBalance">💰 <span id="balanceAmount">0</span> Xu</span>
+          <span class="user-profile">
+            <span class="user-icon">👤</span>
+            <span class="username" id="currentUsername">Đang tải...</span>
+            <span class="user-status-dot" id="userStatusDot" title="Tài khoản hoạt động"></span>
+          </span>
+        </div>
+        <button class="menu-btn">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="game-content">
+    <div class="content-container">
+      
+      <!-- Page Title -->
+      <h1 class="page-title" id="pageTitle">SẢNH PG</h1>
+      
+      <!-- Search Bar -->
+      <div class="search-section">
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Tìm kiếm game..." id="searchInput">
+        </div>
+        <button class="random-btn">
+          <span class="random-icon">🎲</span>
+          RANDOM
+        </button>
+      </div>
+
+      <!-- Games Grid -->
+      <div class="games-grid" id="gamesGrid">
+        <!-- Games will be loaded dynamically -->
+      </div>
+      
+      <!-- Back to Top Button -->
+      <button class="back-to-top" id="backToTop">
+        ↑ QUAY LẠI
+      </button>
+    </div>
+  </main>
+
+  <!-- Game Detail Modal -->
+  <div class="game-detail-modal" id="gameDetailModal">
+    <!-- Canvas particles cho modal -->
+    <canvas id="modal-particles" aria-hidden="true"></canvas>
+    
+    <div class="game-detail-container">
+      <div class="modal-content-wrapper">
+        <!-- Close Button -->
+        <button class="modal-close-btn" id="modalCloseBtn">✕</button>
+      
+      <!-- Header Section -->
+      <div class="modal-header">
+        <!-- Robot Mascot Left -->
+        <div class="robot-mascot">
+          <div class="robot-container">
+            <div class="robot-body">
+              <div class="robot-head">
+                <div class="robot-eye left"></div>
+                <div class="robot-eye right"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Game Display Circle (Center) -->
+        <div class="game-circle-display">
+          <div class="circle-frame">
+            <div class="circle-inner">
+              <img src="" alt="Game Image" id="modalGameImage" class="modal-game-img">
+            </div>
+            <div class="circle-glow"></div>
+            <div class="multiplier-badge">5,000x</div>
+          </div>
+          <div class="game-title-display" id="modalGameTitle">Quyết Chiến Gi...</div>
+        </div>
+        
+        <!-- Right Side Badges -->
+        <div class="right-badges">
+          <div class="percentage-badge">
+            <div class="percentage-circle">
+              <span class="percentage-value">0%</span>
+              <span class="percentage-x">✕</span>
+            </div>
+          </div>
+          <div class="point-input-badge">
+            <span class="badge-label">Nhập số điểm</span>
+            <div class="input-wrapper">
+              <input type="number" class="point-input" id="pointInput" value="0" min="1" max="2000" placeholder="NHẬP SỐ ĐIỂM (1-2000)" />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mega Win Logo -->
+      <div class="mega-win-section">
+        <button type="button" class="mega-win-logo" id="megaWinBtn" onclick="showQRPopup()">
+          <div class="win-text-top">KÈO VIP</div>
+          <div class="win-text-mega">MEGA</div>
+          <div class="win-text-main">WIN</div>
+        </button>
+      </div>
+      
+      <!-- Nhan Trich Title -->
+      <div class="nhan-trich-title">
+        <span class="nhan-text">NHẬN</span>
+        <span class="trich-text">TRÍCH</span>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="action-btn btn-quay-moi" id="btnQuayMoi">
+          <div class="btn-content">
+            <span class="btn-title">QUAY MỒI</span>
+            <span class="btn-subtitle" id="quayMoiSubtitle">0 vòng - Mức Tối Thiểu 0K</span>
+          </div>
+        </button>
+        
+        <button class="action-btn btn-quay-auto" id="btnQuayAuto">
+          <div class="btn-content">
+            <span class="btn-title">QUAY AUTO</span>
+            <span class="btn-subtitle" id="quayAutoSubtitle">0 vòng - Mức Tối Thiểu 0K</span>
+          </div>
+        </button>
+        
+        <button class="action-btn btn-khung-gio" id="btnKhungGio">
+          <div class="btn-content">
+            <span class="btn-title">KHUNG GIỜ</span>
+            <span class="btn-subtitle" id="khungGioSubtitle">: Chưa có dữ liệu :</span>
+          </div>
+        </button>
+      </div>
+      
+      <!-- Analysis Section -->
+      <div class="analysis-section">
+        <div class="provider-avatar">
+          <img id="providerAvatar" src="" alt="Provider" class="provider-avatar-img">
+        </div>
+      </div>
+      
+      <!-- Analysis Button -->
+      <button class="analysis-btn" id="btnAnalysis">
+        <span class="analysis-text">PHÂN TÍCH</span>
+      </button>
+      
+      </div><!-- Close modal-content-wrapper -->
+    </div>
+  </div>
+
+  <!-- Background Effects -->
+  <canvas id="bg-particles" aria-hidden="true"></canvas>
+  <div class="overlay-gradient" aria-hidden="true"></div>
+
+  <!-- Warning Popup (Low Balance) -->
+  <div class="warning-popup" id="warningPopup">
+    <div class="warning-container">
+      <button class="warning-close-btn" id="warningCloseBtn">✕</button>
+      
+      <div class="warning-content">
+        <h2 class="warning-title">CẢNH BÁO</h2>
+        
+        <div class="warning-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        
+        <p class="warning-message">
+          Tài khoản của bạn không đủ xu để vào khu vực này
+        </p>
+        
+        <p class="warning-contact">
+          Liên hệ admin để được hỗ trợ
+        </p>
+        
+        <div class="balance-info">
+          <div class="balance-item current">
+            <span class="balance-label">Xu hiện có:</span>
+            <span class="balance-value" id="warningCurrentBalance">0 <small>CR</small></span>
+          </div>
+          <div class="balance-item required">
+            <span class="balance-label">Yêu cầu:</span>
+            <span class="balance-value" id="warningRequiredBalance">10 <small>CR</small></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Popup -->
+  <div class="qr-popup-overlay" id="qrPopup">
+    <div class="qr-popup">
+      <button class="qr-close-btn" onclick="closeQRPopup()">✕</button>
+      <div class="qr-content">
+        <h2 class="qr-title">KÈO VIP MEGA WIN</h2>
+        <div class="qr-subtitle">Quét mã QR để liên hệ Zalo</div>
+        <div class="qr-image-container">
+          <img src="assets/img/qr/zalo-qr.jpg" alt="Zalo QR Code" class="qr-image">
+        </div>
+        <p class="qr-instruction">📱 Mở Zalo và quét mã QR để được tư vấn</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/particles.js"></script>
+  <script src="assets/js/modal-particles.js"></script>
+  <script src="assets/js/game-list.js"></script>
+  <script>
+    // QR Popup Functions
+    function showQRPopup() {
+      document.getElementById('qrPopup').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeQRPopup() {
+      document.getElementById('qrPopup').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // Close QR popup when clicking outside
+    document.getElementById('qrPopup')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeQRPopup();
+      }
+    });
+  </script>
+</body>
+</html>

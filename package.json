@@ -1,0 +1,38 @@
+{
+  "name": "provider-lobby-ui",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "server": "node backend/server.mjs",
+    "migrate": "node backend/migrate.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:smoke": "node --test tests/smoke.auth-flow.test.mjs tests/smoke.admin.test.mjs",
+    "assets:manifest": "node scripts/generate-asset-manifest.mjs",
+    "assets:download": "node scripts/download-assets-from-bigtool.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "framer-motion": "^11.11.17",
+    "jsonwebtoken": "^9.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "supertest": "^7.1.1",
+    "tailwindcss": "^3.4.14",
+    "vite": "^5.4.10"
+  }
+}

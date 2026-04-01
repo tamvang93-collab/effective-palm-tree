@@ -1,0 +1,181 @@
+import { useMemo, useState } from "react";
+
+function mapReason(reason) {
+  const dict = {
+    USERNAME_TOO_SHORT: "Tên đăng nhập tối thiểu 3 ký tự.",
+    PHONE_REQUIRED: "Số điện thoại là bắt buộc.",
+    PHONE_INVALID: "Số điện thoại phải theo định dạng +84xxxxxxxxx.",
+    PHONE_EXISTS: "Số điện thoại đã được sử dụng.",
+    PASSWORD_TOO_SHORT: "Mật khẩu tối thiểu 6 ký tự.",
+    PASSWORD_CONFIRM_MISMATCH: "Xác nhận mật khẩu không trùng khớp.",
+    USER_EXISTS: "Tên đăng nhập đã tồn tại.",
+    USER_NOT_FOUND: "Không tìm thấy tài khoản.",
+    INVALID_PASSWORD: "Mật khẩu không đúng.",
+    ACCOUNT_LOCKED: "Tài khoản đang bị khóa tạm thời do nhập sai nhiều lần.",
+    RATE_LIMITED: "Bạn thao tác quá nhanh. Vui lòng thử lại sau.",
+    NETWORK_ERROR: "Không kết nối được đến máy chủ API."
+  };
+  return dict[reason] ?? "Đã xảy ra lỗi, vui lòng thử lại.";
+}
+
+export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
+  const [mode, setMode] = useState("login");
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("+84");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const title = useMemo(() => (mode === "login" ? "ĐĂNG NHẬP" : "ĐĂNG KÝ TÀI KHOẢN"), [mode]);
+
+  const submit = async () => {
+    const normalizedUsername = username.trim();
+    const normalizedPassword = password;
+    const normalizedPhone = phone.trim();
+    const isRegister = mode === "register";
+
+    if (normalizedUsername.length < 3) {
+      setError(mapReason("USERNAME_TOO_SHORT"));
+      setSuccess("");
+      return;
+    }
+    if (isRegister && normalizedPhone.length === 0) {
+      setError(mapReason("PHONE_REQUIRED"));
+      setSuccess("");
+      return;
+    }
+    if (isRegister && !/^\+84\d{9,10}$/.test(normalizedPhone)) {
+      setError(mapReason("PHONE_INVALID"));
+      setSuccess("");
+      return;
+    }
+    if (normalizedPassword.length < 6) {
+      setError(mapReason("PASSWORD_TOO_SHORT"));
+      setSuccess("");
+      return;
+    }
+    if (isRegister && confirmPassword !== normalizedPassword) {
+      setError(mapReason("PASSWORD_CONFIRM_MISMATCH"));
+      setSuccess("");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    const action = isRegister ? onRegister : onLogin;
+    try {
+      const result = await action?.({
+        username: normalizedUsername,
+        password: normalizedPassword,
+        phone: isRegister ? normalizedPhone : undefined
+      });
+      if (!result?.ok) {
+        setError(mapReason(result?.reason));
+        return;
+      }
+      setSuccess(mode === "login" ? "Đăng nhập thành công." : "Đăng ký thành công, tài khoản đã được đăng nhập.");
+      onAuthSuccess?.(result);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-2xl sm:p-6">
+      <h2 className="text-center text-xl font-black tracking-[0.2em] text-cyan-200">{title}</h2>
+      <div
+        className="mt-5 space-y-3"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !loading) submit();
+        }}
+      >
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Tên đăng nhập"
+          className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-cyan-200/40"
+        />
+        {mode === "register" ? (
+          <div className="relative">
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Số điện thoại (+84...) *"
+              className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-10 text-sm text-white outline-none focus:border-cyan-200/40"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-rose-300">*</span>
+          </div>
+        ) : null}
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Mật khẩu"
+            className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-12 text-sm text-white outline-none focus:border-cyan-200/40"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-white/80"
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            <span className="text-sm leading-none">{showPassword ? "🙈" : "👁️"}</span>
+          </button>
+        </div>
+        {mode === "register" ? (
+          <>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Xác nhận mật khẩu"
+                className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-12 text-sm text-white outline-none focus:border-cyan-200/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-white/80"
+                aria-label={showConfirmPassword ? "Ẩn xác nhận mật khẩu" : "Hiện xác nhận mật khẩu"}
+              >
+                <span className="text-sm leading-none">{showConfirmPassword ? "🙈" : "👁️"}</span>
+              </button>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      {error ? <p className="mt-3 text-xs font-semibold text-rose-300">{error}</p> : null}
+      {success ? <p className="mt-3 text-xs font-semibold text-emerald-300">{success}</p> : null}
+
+      <button
+        type="button"
+        onClick={submit}
+        disabled={loading}
+        className="mt-4 w-full rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black tracking-[0.16em] text-slate-950 transition hover:brightness-105 disabled:opacity-60"
+      >
+        {loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setMode((prev) => (prev === "login" ? "register" : "login"));
+          setError("");
+          setSuccess("");
+          setConfirmPassword("");
+          setShowConfirmPassword(false);
+        }}
+        className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold tracking-[0.14em] text-white/80 transition hover:bg-white/10"
+      >
+        {mode === "login" ? "CHƯA CÓ TÀI KHOẢN? ĐĂNG KÝ" : "ĐÃ CÓ TÀI KHOẢN? ĐĂNG NHẬP"}
+      </button>
+    </div>
+  );
+}
