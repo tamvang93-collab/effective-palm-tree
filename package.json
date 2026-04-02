@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "start": "node backend/migrate.mjs && node backend/server.mjs",
+    "start": "node backend/migrate.mjs && cross-env NODE_ENV=production node backend/server.mjs",
     "server": "node backend/server.mjs",
     "migrate": "node backend/migrate.mjs",
     "build": "vite build",
@@ -31,6 +31,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^10.1.0",
     "postcss": "^8.4.49",
     "supertest": "^7.1.1",
     "tailwindcss": "^3.4.14",
