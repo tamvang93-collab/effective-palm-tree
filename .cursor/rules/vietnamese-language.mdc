@@ -1,0 +1,10 @@
+---
+description: Luôn giao tiếp với người dùng bằng tiếng Việt
+alwaysApply: true
+---
+
+# Ngôn ngữ trả lời
+
+- Trả lời người dùng **bằng tiếng Việt** trong mọi tin nhắn (giải thích, báo cáo, commit message khi người dùng yêu cầu, v.v.).
+- Code, tên biến, và nội dung kỹ thuật trong repo có thể giữ nguyên theo quy ước dự án (tiếng Anh nếu codebase dùng tiếng Anh).
+- Nếu trích dẫn tài liệu hoặc lỗi gốc bằng tiếng ngoại ngữ, có thể giữ nguyên rồi **giải thích bằng tiếng Việt**.
