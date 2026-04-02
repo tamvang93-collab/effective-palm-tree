@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const SAVED_LOGIN_KEY = "slostwin_saved_login_v1";
 
 function mapReason(reason) {
   const dict = {
@@ -29,8 +31,23 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [rememberPassword, setRememberPassword] = useState(false);
 
   const title = useMemo(() => (mode === "login" ? "ĐĂNG NHẬP" : "ĐĂNG KÝ TÀI KHOẢN"), [mode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(SAVED_LOGIN_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.username) setUsername(String(parsed.username));
+      if (typeof parsed?.password === "string") setPassword(parsed.password);
+      setRememberPassword(true);
+    } catch {
+      // ignore invalid stored data
+    }
+  }, []);
 
   const submit = async () => {
     const normalizedUsername = username.trim();
@@ -77,6 +94,16 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
       if (!result?.ok) {
         setError(mapReason(result?.reason));
         return;
+      }
+      if (mode === "login" && typeof window !== "undefined") {
+        if (rememberPassword) {
+          localStorage.setItem(
+            SAVED_LOGIN_KEY,
+            JSON.stringify({ username: normalizedUsername, password: normalizedPassword })
+          );
+        } else {
+          localStorage.removeItem(SAVED_LOGIN_KEY);
+        }
       }
       setSuccess(mode === "login" ? "Đăng nhập thành công." : "Đăng ký thành công, tài khoản đã được đăng nhập.");
       onAuthSuccess?.(result);
@@ -148,6 +175,17 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
               </button>
             </div>
           </>
+        ) : null}
+        {mode === "login" ? (
+          <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-white/70 select-none">
+            <input
+              type="checkbox"
+              checked={rememberPassword}
+              onChange={(e) => setRememberPassword(e.target.checked)}
+              className="h-4 w-4 rounded border-white/30 bg-black/40 text-cyan-400 focus:ring-cyan-400/40"
+            />
+            Lưu mật khẩu trên thiết bị này
+          </label>
         ) : null}
       </div>
 

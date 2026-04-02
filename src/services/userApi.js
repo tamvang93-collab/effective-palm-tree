@@ -54,7 +54,7 @@ async function safeJson(response) {
 
 async function tryRefreshAccessToken() {
   try {
-    const response = await fetch("/api/auth/refresh", {
+    const response = await fetchWithFallback("/api/auth/refresh", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -72,7 +72,7 @@ async function tryRefreshAccessToken() {
 
 export async function apiFetch(path, options = {}, { retryOn401 = true } = {}) {
   const token = getAuthToken();
-  const response = await fetch(path, {
+  const init = {
     ...options,
     credentials: "include",
     headers: {
@@ -80,12 +80,14 @@ export async function apiFetch(path, options = {}, { retryOn401 = true } = {}) {
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
-  });
+  };
+
+  const response = await fetchWithFallback(path, init);
 
   if (response.status === 401 && retryOn401) {
     const nextToken = await tryRefreshAccessToken();
     if (!nextToken) return response;
-    return fetch(path, {
+    return fetchWithFallback(path, {
       ...options,
       credentials: "include",
       headers: {
@@ -96,6 +98,31 @@ export async function apiFetch(path, options = {}, { retryOn401 = true } = {}) {
     });
   }
   return response;
+}
+
+function getBackendFallbackUrl(requestPath) {
+  // Fallback only for local API paths; avoid changing behavior for other endpoints.
+  if (typeof window === "undefined") return null;
+  if (typeof requestPath !== "string" || !requestPath.startsWith("/api/")) return null;
+
+  // If we can't reach Vite proxy (/api on same origin), try calling backend directly.
+  // Using window.location hostname keeps the fallback aligned with the IP you shared.
+  try {
+    const host = window.location.hostname;
+    return `http://${host}:4000${requestPath}`;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchWithFallback(requestPath, init) {
+  try {
+    return await fetch(requestPath, init);
+  } catch (err) {
+    const fallbackUrl = getBackendFallbackUrl(requestPath);
+    if (!fallbackUrl) throw err;
+    return fetch(fallbackUrl, init);
+  }
 }
 
 

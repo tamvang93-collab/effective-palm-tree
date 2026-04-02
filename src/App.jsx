@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import AdminPanel from "./components/AdminPanel";
 import AuthPanel from "./components/AuthPanel";
+import FloatingSupportMenu from "./components/FloatingSupportMenu";
 import GameCard from "./components/GameCard";
 import GameDetailModal from "./components/GameDetailModal";
 import LowBalancePopup from "./components/LowBalancePopup";
@@ -365,6 +366,8 @@ export default function App() {
           }}
         />
       ) : null}
+
+      <FloatingSupportMenu />
     </main>
   );
 }
