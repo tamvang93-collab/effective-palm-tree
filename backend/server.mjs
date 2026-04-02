@@ -1,4 +1,5 @@
 import "dotenv/config";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
@@ -158,17 +159,24 @@ function issueSessionTokens(db, user, req, tokenFamily = generateTokenFamily()) 
   return { accessToken, refreshToken };
 }
 
-function clearRefreshCookie(res) {
-  res.clearCookie(REFRESH_COOKIE_NAME, {
+function refreshCookieOptions() {
+  return {
     httpOnly: true,
     sameSite: "lax",
-    secure: false
-  });
+    secure: process.env.NODE_ENV === "production"
+  };
+}
+
+function clearRefreshCookie(res) {
+  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
 }
 
 export function createApp(db) {
   const allowAuthAttempt = createRateLimiter();
   const app = express();
+  if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
   app.use(cors({ origin: true, credentials: true }));
   app.use(cookieParser());
   app.use(express.json());
@@ -216,11 +224,7 @@ export function createApp(db) {
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(insert.lastInsertRowid);
     const tokens = issueSessionTokens(db, user, req);
     writeAuditLog(db, { userId: user.id, username, action: "register", status: "success", req });
-    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false
-    });
+    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions());
     return res.json({ ok: true, token: tokens.accessToken, user: mapUser(user) });
   });
 
@@ -266,11 +270,7 @@ export function createApp(db) {
     const freshUser = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
     const tokens = issueSessionTokens(db, freshUser, req);
     writeAuditLog(db, { userId: user.id, username, action: "login", status: "success", req });
-    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false
-    });
+    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions());
     return res.json({ ok: true, token: tokens.accessToken, user: mapUser(freshUser) });
   });
 
@@ -310,11 +310,7 @@ export function createApp(db) {
 
     const tokens = issueSessionTokens(db, user, req, payload.family);
     writeAuditLog(db, { userId: user.id, username: user.username, action: "refresh", status: "success", req });
-    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false
-    });
+    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions());
     return res.json({ ok: true, token: tokens.accessToken, user: mapUser(user) });
   });
 
@@ -625,6 +621,19 @@ export function createApp(db) {
     });
   });
 
+  const distPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "dist");
+  if (fs.existsSync(path.join(distPath, "index.html"))) {
+    app.use(express.static(distPath, { index: false }));
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) {
+        return res.status(404).json({ ok: false, reason: "NOT_FOUND" });
+      }
+      res.sendFile(path.join(distPath, "index.html"), (err) => {
+        if (err) next(err);
+      });
+    });
+  }
+
   return app;
 }
 
@@ -633,7 +642,7 @@ export async function startServer() {
   runMigrations(db);
   await seedAdminAccount(db);
   const app = createApp(db);
-  const port = Number(process.env.API_PORT || 4000);
+  const port = Number(process.env.PORT || process.env.API_PORT || 4000);
 
   app.listen(port, () => {
     // eslint-disable-next-line no-console

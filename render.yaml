@@ -1,0 +1,20 @@
+# Blueprint Render: https://render.com/docs/infrastructure-as-code
+# Trên dashboard: New + Blueprint → chọn repo tamvang93-collab/effective-palm-tree
+# Sau deploy: Environment → thêm JWT_SECRET, REFRESH_JWT_SECRET (hoặc dùng Generate)
+# SQLite free tier: dữ liệu có thể mất khi redeploy — thêm Persistent Disk và DB_PATH=/var/data/app.db
+
+services:
+  - type: web
+    name: effective-palm-tree
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_JWT_SECRET
+        generateValue: true

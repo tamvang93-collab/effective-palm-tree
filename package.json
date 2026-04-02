@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "start": "node backend/migrate.mjs && node backend/server.mjs",
     "server": "node backend/server.mjs",
     "migrate": "node backend/migrate.mjs",
     "build": "vite build",
