@@ -17,6 +17,13 @@ Giao dien React + Tailwind + framer-motion mo phong he thong sanh game va danh s
    - `npm run build`
    - `npm run preview`
 
+## Trien khai production (Render)
+
+- Trong repo co file [`render.yaml`](render.yaml). Tren [Render Dashboard](https://dashboard.render.com): **New > Blueprint**, ket noi GitHub, chon repo **tamvang93-collab/effective-palm-tree**, branch **master**.
+- Build: `npm ci && npm run build`. Start: `npm start` (chay migration + server; server phuc vu ca API va thu muc `dist/` sau build).
+- **URL cho nguoi dung:** sau khi deploy **Live**, copy HTTPS tren trang service (dang `https://ten-dich-vu.onrender.com`).
+- Bien moi truong: xem `render.yaml` va `.env.example` (JWT, tuy chon `ADMIN_*`). Tren free tier, SQLite co the mat khi redeploy — them **Persistent Disk** tren Render va dat `DB_PATH` neu can giu du lieu lau dai (chi tiet trong comment `render.yaml`).
+
 ## Routing (share link)
 
 - Lobby: `/`
