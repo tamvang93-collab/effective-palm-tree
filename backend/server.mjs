@@ -78,7 +78,7 @@ export async function seedAdminAccount(db) {
   const passwordHash = await bcrypt.hash(password, 12);
   db.prepare(
     `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, failed_attempts, created_at, updated_at)
-     VALUES (?, ?, ?, 0, 1200, 1, 0, ?, ?)`
+     VALUES (?, ?, ?, 0, 0, 1, 0, ?, ?)`
   ).run(username, phone, passwordHash, now, now);
 }
 
@@ -211,7 +211,7 @@ export function createApp(db) {
       .prepare(
         "INSERT INTO users (username, phone, password_hash, vip, balance, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
       )
-      .run(username, phone, passwordHash, 0, 1200, now, now);
+      .run(username, phone, passwordHash, 0, 0, now, now);
 
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(insert.lastInsertRowid);
     const tokens = issueSessionTokens(db, user, req);
@@ -434,7 +434,7 @@ export function createApp(db) {
     const insert = db
       .prepare(
         `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, failed_attempts, created_at, updated_at)
-         VALUES (?, ?, ?, 0, 1200, 0, 0, ?, ?)`
+         VALUES (?, ?, ?, 0, 0, 0, 0, ?, ?)`
       )
       .run(username, phone, passwordHash, now, now);
 

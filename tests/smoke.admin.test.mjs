@@ -54,7 +54,7 @@ test("smoke: admin forbidden for normal user; admin CRUD + balance logs", async 
     .set("Authorization", `Bearer ${adminToken}`)
     .send({ delta: 100, reason: "smoke test" });
   assert.equal(adjust.statusCode, 200);
-  assert.equal(adjust.body.newBalance, 1300);
+  assert.equal(adjust.body.newBalance, 100);
 
   const logs = await request
     .get(`/api/admin/balance-logs?userId=${managedId}`)

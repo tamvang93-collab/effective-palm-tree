@@ -19,6 +19,12 @@ test("smoke: register -> login -> refresh -> analyze(deduct) -> logout", async (
   assert.equal(register.statusCode, 200);
   assert.equal(register.body.ok, true);
   assert.equal(register.body.user.phone, "+84901234567");
+  assert.equal(register.body.user.balance, 0);
+
+  db.prepare("UPDATE users SET balance = 100, updated_at = ? WHERE lower(username) = lower(?)").run(
+    new Date().toISOString(),
+    "smoke_user"
+  );
 
   const login = await request.post("/api/auth/login").send({
     username: "smoke_user",
@@ -44,7 +50,7 @@ test("smoke: register -> login -> refresh -> analyze(deduct) -> logout", async (
     .set("Authorization", `Bearer ${refresh.body.token}`)
     .send({ amount: 10 });
   assert.equal(deduct.statusCode, 200);
-  assert.equal(typeof deduct.body.newBalance, "number");
+  assert.equal(deduct.body.newBalance, 90);
 
   const logout = await request
     .post("/api/auth/logout")
