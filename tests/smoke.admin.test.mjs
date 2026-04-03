@@ -35,6 +35,12 @@ test("smoke: admin forbidden for normal user; admin CRUD + balance logs", async 
   assert.equal(adminLogin.statusCode, 200);
   const adminToken = adminLogin.body.token;
   assert.equal(adminLogin.body.user.isAdmin, true);
+  assert.equal(adminLogin.body.user.adminRole, "super");
+
+  const siteCfg = await request.get("/api/site-config");
+  assert.equal(siteCfg.statusCode, 200);
+  assert.equal(siteCfg.body.ok, true);
+  assert.equal(typeof siteCfg.body.config.deductXuModelAll5, "number");
 
   const list = await request.get("/api/admin/users").set("Authorization", `Bearer ${adminToken}`);
   assert.equal(list.statusCode, 200);

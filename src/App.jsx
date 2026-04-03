@@ -9,6 +9,7 @@ import LowBalancePopup from "./components/LowBalancePopup";
 import ProviderCard from "./components/ProviderCard";
 import { gamesByProvider, providers } from "./data/mockData";
 import { runPresetAnalysis } from "./services/analysisEngine";
+import { fetchSiteConfig } from "./services/siteConfig";
 import { deductXu, fetchCurrentUser, loginUser, logoutUser, registerUser } from "./services/userApi";
 
 const PROVIDER_QUERY_KEY = "provider";
@@ -46,6 +47,9 @@ export default function App() {
   const [analysisProgress, setAnalysisProgress] = useState([]);
   const [authRedirectLoading, setAuthRedirectLoading] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [siteConfig, setSiteConfig] = useState(null);
+  const [adminEntryUrl, setAdminEntryUrl] = useState(false);
+
   const selectedProvider = useMemo(
     () => providers.find((provider) => provider.id === selectedProviderId) ?? null,
     [selectedProviderId]
@@ -73,6 +77,22 @@ export default function App() {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchSiteConfig().then((cfg) => {
+      if (mounted) setSiteConfig(cfg);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    setAdminEntryUrl(p.get("admin") === "1");
   }, []);
 
   const filteredGames = useMemo(() => {
@@ -118,8 +138,12 @@ export default function App() {
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1800px] items-center justify-center sm:min-h-[calc(100vh-4rem)]">
           <div className="w-full max-w-md">
             <div className="relative overflow-hidden rounded-xl pb-1 text-center">
-              <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">SLOSTWIN - AI</h1>
-              <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">HỆ THỐNG GAME</p>
+              <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">
+                {siteConfig?.siteTitle ?? "SLOSTWIN - AI"}
+              </h1>
+              <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">
+                {siteConfig?.siteSubtitle ?? "HỆ THỐNG GAME"}
+              </p>
               <motion.div
                 aria-hidden="true"
                 className="pointer-events-none absolute -left-24 top-0 h-full w-16 rotate-12 bg-gradient-to-r from-transparent via-white/55 to-transparent blur-[1px]"
@@ -127,7 +151,12 @@ export default function App() {
                 transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
               />
             </div>
-            <AuthPanel onLogin={loginUser} onRegister={registerUser} onAuthSuccess={handleAuthSuccess} />
+            <AuthPanel
+              onLogin={loginUser}
+              onRegister={registerUser}
+              onAuthSuccess={handleAuthSuccess}
+              adminEntry={adminEntryUrl}
+            />
           </div>
         </div>
         {authRedirectLoading ? (
@@ -148,8 +177,12 @@ export default function App() {
       <div className="mx-auto max-w-[1800px]">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">SLOSTWIN - AI</h1>
-            <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">HỆ THỐNG GAME</p>
+            <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">
+              {siteConfig?.siteTitle ?? "SLOSTWIN - AI"}
+            </h1>
+            <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">
+              {siteConfig?.siteSubtitle ?? "HỆ THỐNG GAME"}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -278,9 +311,12 @@ export default function App() {
         analyzing={analyzing}
         analysisProgress={analysisProgress}
         onClose={() => setSelectedGame(null)}
+        siteConfig={siteConfig ?? undefined}
         onAnalyze={async ({ game, points, modelKey, gameLink }) => {
           const balance = Number(currentUser?.balance ?? 0);
-          const analysisCost = modelKey === "all5" ? 10 : 2;
+          const cAll = Number(siteConfig?.deductXuModelAll5 ?? 10);
+          const cOth = Number(siteConfig?.deductXuModelOther ?? 2);
+          const analysisCost = modelKey === "all5" ? cAll : cOth;
           if (balance < analysisCost) {
             setCurrentBalance(balance);
             setRequiredBalance(analysisCost);
@@ -359,10 +395,13 @@ export default function App() {
 
       {adminOpen ? (
         <AdminPanel
+          adminRole={currentUser?.adminRole ?? null}
           onClose={async () => {
             setAdminOpen(false);
             const u = await fetchCurrentUser();
             if (u) setCurrentUser(u);
+            const cfg = await fetchSiteConfig();
+            setSiteConfig(cfg);
           }}
         />
       ) : null}

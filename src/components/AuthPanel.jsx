@@ -20,7 +20,7 @@ function mapReason(reason) {
   return dict[reason] ?? "Đã xảy ra lỗi, vui lòng thử lại.";
 }
 
-export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
+export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEntry = false }) {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("+84");
@@ -114,6 +114,11 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess }) {
 
   return (
     <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-2xl sm:p-6">
+      {adminEntry ? (
+        <p className="mb-3 rounded-lg border border-violet-400/35 bg-violet-950/50 px-3 py-2 text-center text-[0.7rem] font-bold leading-snug tracking-wide text-violet-100">
+          Đăng nhập quản trị — dùng URL có tham số <span className="font-mono text-violet-200">?admin=1</span> để mở sẵn khu vực này.
+        </p>
+      ) : null}
       <h2 className="text-center text-xl font-black tracking-[0.2em] text-cyan-200">{title}</h2>
       <div
         className="mt-5 space-y-3"

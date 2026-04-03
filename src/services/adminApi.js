@@ -53,6 +53,33 @@ export async function adminBalanceAdjust(userId, { delta, reason = "" }) {
   return { ok: true, ...payload };
 }
 
+export async function adminGetSiteSettings() {
+  const response = await apiFetch("/api/admin/site-settings", { method: "GET" });
+  const payload = await safeJson(response);
+  if (!response.ok) return { ok: false, reason: payload?.reason ?? "SETTINGS_FAILED", payload };
+  return { ok: true, config: payload.config ?? {} };
+}
+
+export async function adminPutSiteSettings(config) {
+  const response = await apiFetch("/api/admin/site-settings", {
+    method: "PUT",
+    body: JSON.stringify({ config })
+  });
+  const payload = await safeJson(response);
+  if (!response.ok) return { ok: false, reason: payload?.reason ?? "SETTINGS_SAVE_FAILED", payload };
+  return { ok: true, config: payload.config ?? {} };
+}
+
+export async function adminCreateSubAdmin({ username, password, phone }) {
+  const response = await apiFetch("/api/admin/sub-admins", {
+    method: "POST",
+    body: JSON.stringify({ username, password, phone })
+  });
+  const payload = await safeJson(response);
+  if (!response.ok) return { ok: false, reason: payload?.reason ?? "SUB_ADMIN_FAILED", payload };
+  return { ok: true, user: payload.user, loginUrl: payload.loginUrl };
+}
+
 export async function adminListBalanceLogs({ userId = null, page = 1, limit = 20 } = {}) {
   const params = new URLSearchParams();
   if (userId != null && userId !== "") params.set("userId", String(userId));

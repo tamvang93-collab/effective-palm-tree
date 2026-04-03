@@ -44,6 +44,7 @@ export function runMigrations(db) {
 
 export function resetDatabaseForTests(db) {
   db.exec("DROP TABLE IF EXISTS admin_balance_logs;");
+  db.exec("DROP TABLE IF EXISTS site_settings;");
   db.exec("DROP TABLE IF EXISTS auth_logs;");
   db.exec("DROP TABLE IF EXISTS auth_sessions;");
   db.exec("DROP TABLE IF EXISTS users;");

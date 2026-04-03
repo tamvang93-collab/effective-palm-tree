@@ -64,13 +64,16 @@ export default function GameDetailModal({
   analysisResult,
   onClose,
   onAnalyze,
-  onResetData
+  onResetData,
+  siteConfig
 }) {
+  const costAll5 = Number(siteConfig?.deductXuModelAll5 ?? 10);
+  const costOther = Number(siteConfig?.deductXuModelOther ?? 2);
   const [points, setPoints] = useState(100);
   const [gameLink, setGameLink] = useState("");
   const [modelKey, setModelKey] = useState("manus");
   const [pendingAnalyzePayload, setPendingAnalyzePayload] = useState(null);
-  const analysisCost = modelKey === "all5" ? 10 : 2;
+  const analysisCost = modelKey === "all5" ? costAll5 : costOther;
   const aiModels = [
     { id: "manus", label: "MANUS AI", logo: "MN" },
     { id: "claude", label: "CLAUDE 3.7 SONNET", logo: "CL" },

@@ -16,6 +16,7 @@ function normalizeUser(rawUser = {}) {
   const balance = rawUser.xu ?? rawUser.balance ?? rawUser.coins ?? 0;
   const vip = rawUser.vip ?? rawUser.vip_level ?? rawUser.vipLevel ?? 0;
   const isAdmin = Boolean(rawUser.isAdmin ?? rawUser.is_admin);
+  const adminRole = rawUser.adminRole ?? rawUser.admin_role ?? null;
   return {
     ...rawUser,
     xu: balance,
@@ -24,7 +25,8 @@ function normalizeUser(rawUser = {}) {
     vip,
     vip_level: vip,
     vipLevel: vip,
-    isAdmin
+    isAdmin,
+    adminRole: isAdmin ? adminRole || "super" : null
   };
 }
 

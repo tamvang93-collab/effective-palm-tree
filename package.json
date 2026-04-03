@@ -13,7 +13,7 @@
     "migrate": "node backend/migrate.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "test:smoke": "node --test tests/smoke.auth-flow.test.mjs tests/smoke.admin.test.mjs",
+    "test:smoke": "node --test tests/smoke.auth-flow.test.mjs tests/smoke.admin.test.mjs tests/smoke.subadmin.test.mjs",
     "assets:manifest": "node scripts/generate-asset-manifest.mjs",
     "assets:download": "node scripts/download-assets-from-bigtool.mjs"
   },

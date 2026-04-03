@@ -7,14 +7,15 @@ const REFRESH_SECRET = process.env.REFRESH_JWT_SECRET || `${JWT_SECRET}_refresh`
 const REFRESH_EXPIRES_IN = process.env.REFRESH_JWT_EXPIRES_IN || "30d";
 
 export function signUserToken(user) {
-  return jwt.sign(
-    {
-      sub: user.id,
-      username: user.username
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  const payload = {
+    sub: user.id,
+    username: user.username
+  };
+  if (user.is_admin) {
+    const role = user.admin_role === "sub" ? "sub" : "super";
+    payload.adminRole = role;
+  }
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 export function verifyUserToken(token) {

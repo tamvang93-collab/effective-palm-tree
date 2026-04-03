@@ -17,6 +17,11 @@ import {
 } from "./auth.mjs";
 import { createDbConnection, runMigrations } from "./db.mjs";
 
+function effectiveAdminRole(row) {
+  if (!row?.is_admin) return null;
+  return row.admin_role === "sub" ? "sub" : "super";
+}
+
 function mapUser(row) {
   return {
     id: row.id,
@@ -27,6 +32,7 @@ function mapUser(row) {
     xu: row.balance,
     coins: row.balance,
     isAdmin: Boolean(row.is_admin),
+    adminRole: effectiveAdminRole(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -40,6 +46,8 @@ function mapAdminUserRow(row) {
     vip: row.vip,
     balance: row.balance,
     isAdmin: Boolean(row.is_admin),
+    adminRole: effectiveAdminRole(row),
+    createdByAdminId: row.created_by_admin_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     lockUntil: row.lock_until ?? null,
@@ -56,7 +64,7 @@ export async function seedAdminAccount(db) {
   const now = new Date().toISOString();
   const existing = db.prepare("SELECT * FROM users WHERE lower(username) = lower(?)").get(username);
   if (existing) {
-    db.prepare("UPDATE users SET is_admin = 1, updated_at = ? WHERE id = ?").run(now, existing.id);
+    db.prepare("UPDATE users SET is_admin = 1, admin_role = 'super', updated_at = ? WHERE id = ?").run(now, existing.id);
     return;
   }
 
@@ -78,8 +86,8 @@ export async function seedAdminAccount(db) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   db.prepare(
-    `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, failed_attempts, created_at, updated_at)
-     VALUES (?, ?, ?, 0, 0, 1, 0, ?, ?)`
+    `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, admin_role, created_by_admin_id, failed_attempts, created_at, updated_at)
+     VALUES (?, ?, ?, 0, 0, 1, 'super', NULL, 0, ?, ?)`
   ).run(username, phone, passwordHash, now, now);
 }
 
@@ -91,6 +99,30 @@ function adminOnly(db) {
     }
     return next();
   };
+}
+
+function adminSuperOnly(db) {
+  return (req, res, next) => {
+    const row = db.prepare("SELECT is_admin, admin_role FROM users WHERE id = ?").get(req.auth.sub);
+    if (!row || !row.is_admin) {
+      return res.status(403).json({ ok: false, reason: "FORBIDDEN_NOT_ADMIN" });
+    }
+    const role = row.admin_role === "sub" ? "sub" : "super";
+    if (role !== "super") {
+      return res.status(403).json({ ok: false, reason: "FORBIDDEN_SUPER_ADMIN_ONLY" });
+    }
+    return next();
+  };
+}
+
+function getSiteConfigPayload(db) {
+  const row = db.prepare("SELECT value FROM site_settings WHERE key = ?").get("config_json");
+  const raw = row?.value ?? "{}";
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 const LOGIN_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 60_000);
@@ -184,6 +216,32 @@ export function createApp(db) {
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
+  });
+
+  app.get("/api/site-config", (_req, res) => {
+    const cfg = getSiteConfigPayload(db);
+    const defaults = {
+      deductXuModelAll5: 10,
+      deductXuModelOther: 2,
+      siteTitle: "SLOSTWIN - AI",
+      siteSubtitle: "HỆ THỐNG GAME"
+    };
+    res.json({ ok: true, config: { ...defaults, ...cfg } });
+  });
+
+  app.get("/api/admin/site-settings", authMiddleware, adminSuperOnly(db), (_req, res) => {
+    res.json({ ok: true, config: getSiteConfigPayload(db) });
+  });
+
+  app.put("/api/admin/site-settings", authMiddleware, adminSuperOnly(db), (req, res) => {
+    const prev = getSiteConfigPayload(db);
+    const next = { ...prev, ...(req.body?.config && typeof req.body.config === "object" ? req.body.config : {}) };
+    const now = new Date().toISOString();
+    db.prepare(
+      `INSERT INTO site_settings (key, value, updated_at) VALUES ('config_json', ?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+    ).run(JSON.stringify(next), now);
+    return res.json({ ok: true, config: next });
   });
 
   app.post("/api/auth/register", async (req, res) => {
@@ -340,7 +398,13 @@ export function createApp(db) {
   });
 
   app.post("/api/user/deduct-xu", authMiddleware, (req, res) => {
-    const amount = Math.max(1, Number(req.body?.amount ?? 10));
+    const cfg = getSiteConfigPayload(db);
+    const allowedA = Number(cfg.deductXuModelAll5 ?? 10);
+    const allowedB = Number(cfg.deductXuModelOther ?? 2);
+    const amount = Math.max(1, Number(req.body?.amount ?? allowedA));
+    if (amount !== allowedA && amount !== allowedB) {
+      return res.status(400).json({ ok: false, reason: "INVALID_DEDUCT_AMOUNT" });
+    }
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.auth.sub);
     if (!user) return res.status(404).json({ ok: false, reason: "USER_NOT_FOUND" });
     if (user.balance < amount) return res.status(400).json({ ok: false, reason: "INSUFFICIENT_BALANCE" });
@@ -355,6 +419,10 @@ export function createApp(db) {
   const ADMIN_LOCK_UNTIL = new Date("2099-12-31T23:59:59.999Z").toISOString();
 
   app.get("/api/admin/users", authMiddleware, adminOnly(db), (req, res) => {
+    const actor = db.prepare("SELECT is_admin, admin_role FROM users WHERE id = ?").get(req.auth.sub);
+    const subOnly = Boolean(actor?.is_admin && actor.admin_role === "sub");
+    const memberFilter = subOnly ? " AND is_admin = 0 " : "";
+
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
     const offset = (page - 1) * limit;
@@ -363,27 +431,29 @@ export function createApp(db) {
     let total;
     let rows;
     if (q) {
-      const needle = `%${q}%`;
       total = db
         .prepare(
           `SELECT COUNT(*) AS c FROM users
-           WHERE instr(lower(username), lower(?)) > 0
-              OR instr(lower(ifnull(phone, '')), lower(?)) > 0`
+           WHERE (instr(lower(username), lower(?)) > 0
+              OR instr(lower(ifnull(phone, '')), lower(?)) > 0)
+              ${memberFilter}`
         )
         .get(q, q).c;
       rows = db
         .prepare(
-          `SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin FROM users
-           WHERE instr(lower(username), lower(?)) > 0
-              OR instr(lower(ifnull(phone, '')), lower(?)) > 0
+          `SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin, admin_role, created_by_admin_id FROM users
+           WHERE (instr(lower(username), lower(?)) > 0
+              OR instr(lower(ifnull(phone, '')), lower(?)) > 0)
+              ${memberFilter}
            ORDER BY id DESC LIMIT ? OFFSET ?`
         )
         .all(q, q, limit, offset);
     } else {
-      total = db.prepare("SELECT COUNT(*) AS c FROM users").get().c;
+      total = db.prepare(`SELECT COUNT(*) AS c FROM users WHERE 1=1 ${memberFilter}`).get().c;
       rows = db
         .prepare(
-          `SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin FROM users
+          `SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin, admin_role, created_by_admin_id FROM users
+           WHERE 1=1 ${memberFilter}
            ORDER BY id DESC LIMIT ? OFFSET ?`
         )
         .all(limit, offset);
@@ -398,7 +468,7 @@ export function createApp(db) {
     });
   });
 
-  app.post("/api/admin/users", authMiddleware, adminOnly(db), async (req, res) => {
+  app.post("/api/admin/sub-admins", authMiddleware, adminSuperOnly(db), async (req, res) => {
     const username = String(req.body?.username ?? "").trim();
     const phone = String(req.body?.phone ?? "").trim();
     const password = String(req.body?.password ?? "");
@@ -429,13 +499,73 @@ export function createApp(db) {
     const passwordHash = await bcrypt.hash(password, 12);
     const insert = db
       .prepare(
-        `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, failed_attempts, created_at, updated_at)
-         VALUES (?, ?, ?, 0, 0, 0, 0, ?, ?)`
+        `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, admin_role, created_by_admin_id, failed_attempts, created_at, updated_at)
+         VALUES (?, ?, ?, 0, 0, 1, 'sub', ?, 0, ?, ?)`
+      )
+      .run(username, phone, passwordHash, req.auth.sub, now, now);
+
+    const created = db
+      .prepare(
+        "SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin, admin_role, created_by_admin_id FROM users WHERE id = ?"
+      )
+      .get(insert.lastInsertRowid);
+
+    writeAuditLog(db, {
+      userId: req.auth.sub,
+      username: req.auth.username,
+      action: "admin_create_sub_admin",
+      status: "success",
+      req,
+      detail: JSON.stringify({ targetUserId: created.id, targetUsername: username })
+    });
+
+    const host = req.get("host") || "localhost";
+    const proto = req.get("x-forwarded-proto") || req.protocol || "http";
+    const loginUrl = `${proto}://${host}/?admin=1`;
+
+    return res.status(201).json({ ok: true, user: mapAdminUserRow(created), loginUrl });
+  });
+
+  app.post("/api/admin/users", authMiddleware, adminSuperOnly(db), async (req, res) => {
+    const username = String(req.body?.username ?? "").trim();
+    const phone = String(req.body?.phone ?? "").trim();
+    const password = String(req.body?.password ?? "");
+
+    if (username.length < 3) {
+      return res.status(400).json({ ok: false, reason: "USERNAME_TOO_SHORT" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ ok: false, reason: "PASSWORD_TOO_SHORT" });
+    }
+    if (phone.length === 0) {
+      return res.status(400).json({ ok: false, reason: "PHONE_REQUIRED" });
+    }
+    if (!/^\+84\d{9,10}$/.test(phone)) {
+      return res.status(400).json({ ok: false, reason: "PHONE_INVALID" });
+    }
+
+    const existed = db.prepare("SELECT id FROM users WHERE lower(username) = lower(?)").get(username);
+    if (existed) {
+      return res.status(409).json({ ok: false, reason: "USER_EXISTS" });
+    }
+    const existedPhone = db.prepare("SELECT id FROM users WHERE phone = ?").get(phone);
+    if (existedPhone) {
+      return res.status(409).json({ ok: false, reason: "PHONE_EXISTS" });
+    }
+
+    const now = new Date().toISOString();
+    const passwordHash = await bcrypt.hash(password, 12);
+    const insert = db
+      .prepare(
+        `INSERT INTO users (username, phone, password_hash, vip, balance, is_admin, admin_role, created_by_admin_id, failed_attempts, created_at, updated_at)
+         VALUES (?, ?, ?, 0, 0, 0, NULL, NULL, 0, ?, ?)`
       )
       .run(username, phone, passwordHash, now, now);
 
     const created = db
-      .prepare("SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin FROM users WHERE id = ?")
+      .prepare(
+        "SELECT id, username, phone, vip, balance, created_at, updated_at, lock_until, is_admin, admin_role, created_by_admin_id FROM users WHERE id = ?"
+      )
       .get(insert.lastInsertRowid);
 
     writeAuditLog(db, {
@@ -450,7 +580,7 @@ export function createApp(db) {
     return res.status(201).json({ ok: true, user: mapAdminUserRow(created) });
   });
 
-  app.post("/api/admin/users/:id/lock", authMiddleware, adminOnly(db), (req, res) => {
+  app.post("/api/admin/users/:id/lock", authMiddleware, adminSuperOnly(db), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id) || id <= 0) {
       return res.status(400).json({ ok: false, reason: "INVALID_USER_ID" });
@@ -479,7 +609,7 @@ export function createApp(db) {
     return res.json({ ok: true });
   });
 
-  app.post("/api/admin/users/:id/unlock", authMiddleware, adminOnly(db), (req, res) => {
+  app.post("/api/admin/users/:id/unlock", authMiddleware, adminSuperOnly(db), (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id) || id <= 0) {
       return res.status(400).json({ ok: false, reason: "INVALID_USER_ID" });
@@ -522,6 +652,11 @@ export function createApp(db) {
       if (!target) {
         db.exec("ROLLBACK");
         return res.status(404).json({ ok: false, reason: "USER_NOT_FOUND" });
+      }
+      const actor = db.prepare("SELECT admin_role FROM users WHERE id = ?").get(req.auth.sub);
+      if (actor?.admin_role === "sub" && target.is_admin) {
+        db.exec("ROLLBACK");
+        return res.status(403).json({ ok: false, reason: "FORBIDDEN_SUB_CANNOT_ADJUST_ADMIN" });
       }
       const balanceBefore = target.balance;
       const balanceAfter = balanceBefore + delta;
@@ -567,6 +702,11 @@ export function createApp(db) {
   });
 
   app.get("/api/admin/balance-logs", authMiddleware, adminOnly(db), (req, res) => {
+    const actor = db.prepare("SELECT admin_role FROM users WHERE id = ?").get(req.auth.sub);
+    const subOnly = actor?.admin_role === "sub";
+    const adminFilter = subOnly ? "WHERE l.admin_id = ?" : "";
+    const adminBind = subOnly ? [req.auth.sub] : [];
+
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
     const offset = (page - 1) * limit;
@@ -575,30 +715,64 @@ export function createApp(db) {
     let total;
     let rows;
     if (userId != null && Number.isFinite(userId)) {
-      total = db.prepare("SELECT COUNT(*) AS c FROM admin_balance_logs WHERE target_user_id = ?").get(userId).c;
-      rows = db
-        .prepare(
-          `SELECT l.*, u.username AS target_username, a.username AS admin_username
-           FROM admin_balance_logs l
-           JOIN users u ON u.id = l.target_user_id
-           JOIN users a ON a.id = l.admin_id
-           WHERE l.target_user_id = ?
-           ORDER BY l.id DESC
-           LIMIT ? OFFSET ?`
-        )
-        .all(userId, limit, offset);
+      total = subOnly
+        ? db
+            .prepare(
+              "SELECT COUNT(*) AS c FROM admin_balance_logs l WHERE l.target_user_id = ? AND l.admin_id = ?"
+            )
+            .get(userId, req.auth.sub).c
+        : db
+            .prepare("SELECT COUNT(*) AS c FROM admin_balance_logs l WHERE l.target_user_id = ?")
+            .get(userId).c;
+      rows = subOnly
+        ? db
+            .prepare(
+              `SELECT l.*, u.username AS target_username, a.username AS admin_username
+               FROM admin_balance_logs l
+               JOIN users u ON u.id = l.target_user_id
+               JOIN users a ON a.id = l.admin_id
+               WHERE l.target_user_id = ? AND l.admin_id = ?
+               ORDER BY l.id DESC
+               LIMIT ? OFFSET ?`
+            )
+            .all(userId, req.auth.sub, limit, offset)
+        : db
+            .prepare(
+              `SELECT l.*, u.username AS target_username, a.username AS admin_username
+               FROM admin_balance_logs l
+               JOIN users u ON u.id = l.target_user_id
+               JOIN users a ON a.id = l.admin_id
+               WHERE l.target_user_id = ?
+               ORDER BY l.id DESC
+               LIMIT ? OFFSET ?`
+            )
+            .all(userId, limit, offset);
     } else {
-      total = db.prepare("SELECT COUNT(*) AS c FROM admin_balance_logs").get().c;
-      rows = db
-        .prepare(
-          `SELECT l.*, u.username AS target_username, a.username AS admin_username
-           FROM admin_balance_logs l
-           JOIN users u ON u.id = l.target_user_id
-           JOIN users a ON a.id = l.admin_id
-           ORDER BY l.id DESC
-           LIMIT ? OFFSET ?`
-        )
-        .all(limit, offset);
+      total = db
+        .prepare(`SELECT COUNT(*) AS c FROM admin_balance_logs l ${adminFilter}`)
+        .get(...adminBind).c;
+      rows = subOnly
+        ? db
+            .prepare(
+              `SELECT l.*, u.username AS target_username, a.username AS admin_username
+               FROM admin_balance_logs l
+               JOIN users u ON u.id = l.target_user_id
+               JOIN users a ON a.id = l.admin_id
+               WHERE l.admin_id = ?
+               ORDER BY l.id DESC
+               LIMIT ? OFFSET ?`
+            )
+            .all(req.auth.sub, limit, offset)
+        : db
+            .prepare(
+              `SELECT l.*, u.username AS target_username, a.username AS admin_username
+               FROM admin_balance_logs l
+               JOIN users u ON u.id = l.target_user_id
+               JOIN users a ON a.id = l.admin_id
+               ORDER BY l.id DESC
+               LIMIT ? OFFSET ?`
+            )
+            .all(limit, offset);
     }
 
     return res.json({
