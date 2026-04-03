@@ -113,13 +113,13 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
   };
 
   return (
-    <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-2xl sm:p-6">
+    <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border border-sky-200/80 bg-white/85 p-5 shadow-xl shadow-sky-200/40 backdrop-blur-sm sm:p-6">
       {adminEntry ? (
-        <p className="mb-3 rounded-lg border border-violet-400/35 bg-violet-950/50 px-3 py-2 text-center text-[0.7rem] font-bold leading-snug tracking-wide text-violet-100">
-          Đăng nhập quản trị — dùng URL có tham số <span className="font-mono text-violet-200">?admin=1</span> để mở sẵn khu vực này.
+        <p className="mb-3 rounded-lg border border-violet-300/60 bg-violet-50 px-3 py-2 text-center text-[0.7rem] font-bold leading-snug tracking-wide text-violet-900">
+          Đăng nhập quản trị — dùng URL có tham số <span className="font-mono text-violet-700">?admin=1</span> để mở sẵn khu vực này.
         </p>
       ) : null}
-      <h2 className="text-center text-xl font-black tracking-[0.2em] text-cyan-200">{title}</h2>
+      <h2 className="text-center text-xl font-black tracking-[0.2em] text-sky-800">{title}</h2>
       <div
         className="mt-5 space-y-3"
         onKeyDown={(e) => {
@@ -130,7 +130,7 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Tên đăng nhập"
-          className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-cyan-200/40"
+          className="w-full rounded-xl border border-sky-200/90 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-300"
         />
         {mode === "register" ? (
           <div className="relative">
@@ -138,9 +138,9 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Số điện thoại (+84...) *"
-              className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-10 text-sm text-white outline-none focus:border-cyan-200/40"
+              className="w-full rounded-xl border border-sky-200/90 bg-white px-3 py-2 pr-10 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-300"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-rose-300">*</span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-rose-500">*</span>
           </div>
         ) : null}
         <div className="relative">
@@ -149,12 +149,12 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Mật khẩu"
-            className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-12 text-sm text-white outline-none focus:border-cyan-200/40"
+            className="w-full rounded-xl border border-sky-200/90 bg-white px-3 py-2 pr-12 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-300"
           />
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-white/80"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-slate-600"
             aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           >
             <span className="text-sm leading-none">{showPassword ? "🙈" : "👁️"}</span>
@@ -168,12 +168,12 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Xác nhận mật khẩu"
-                className="w-full rounded-xl border border-white/15 bg-black/30 px-3 py-2 pr-12 text-sm text-white outline-none focus:border-cyan-200/40"
+                className="w-full rounded-xl border border-sky-200/90 bg-white px-3 py-2 pr-12 text-sm text-slate-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-300"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((prev) => !prev)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-white/80"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-slate-600"
                 aria-label={showConfirmPassword ? "Ẩn xác nhận mật khẩu" : "Hiện xác nhận mật khẩu"}
               >
                 <span className="text-sm leading-none">{showConfirmPassword ? "🙈" : "👁️"}</span>
@@ -182,26 +182,26 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
           </>
         ) : null}
         {mode === "login" ? (
-          <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-white/70 select-none">
+          <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-slate-600 select-none">
             <input
               type="checkbox"
               checked={rememberPassword}
               onChange={(e) => setRememberPassword(e.target.checked)}
-              className="h-4 w-4 rounded border-white/30 bg-black/40 text-cyan-400 focus:ring-cyan-400/40"
+              className="h-4 w-4 rounded border-slate-300 bg-white text-sky-600 focus:ring-sky-400/50"
             />
             Lưu mật khẩu trên thiết bị này
           </label>
         ) : null}
       </div>
 
-      {error ? <p className="mt-3 text-xs font-semibold text-rose-300">{error}</p> : null}
-      {success ? <p className="mt-3 text-xs font-semibold text-emerald-300">{success}</p> : null}
+      {error ? <p className="mt-3 text-xs font-semibold text-rose-600">{error}</p> : null}
+      {success ? <p className="mt-3 text-xs font-semibold text-emerald-700">{success}</p> : null}
 
       <button
         type="button"
         onClick={submit}
         disabled={loading}
-        className="mt-4 w-full rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black tracking-[0.16em] text-slate-950 transition hover:brightness-105 disabled:opacity-60"
+        className="mt-4 w-full rounded-xl bg-sky-500 px-4 py-2 text-sm font-black tracking-[0.16em] text-white shadow-md transition hover:bg-sky-600 disabled:opacity-60"
       >
         {loading ? "ĐANG XỬ LÝ..." : mode === "login" ? "ĐĂNG NHẬP" : "TẠO TÀI KHOẢN"}
       </button>
@@ -215,7 +215,7 @@ export default function AuthPanel({ onLogin, onRegister, onAuthSuccess, adminEnt
           setConfirmPassword("");
           setShowConfirmPassword(false);
         }}
-        className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold tracking-[0.14em] text-white/80 transition hover:bg-white/10"
+        className="mt-3 w-full rounded-xl border border-sky-300/70 bg-white/70 px-4 py-2 text-xs font-bold tracking-[0.14em] text-slate-700 transition hover:bg-white"
       >
         {mode === "login" ? "CHƯA CÓ TÀI KHOẢN? ĐĂNG KÝ" : "ĐÃ CÓ TÀI KHOẢN? ĐĂNG NHẬP"}
       </button>

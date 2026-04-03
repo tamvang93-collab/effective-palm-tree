@@ -134,19 +134,19 @@ export default function App() {
 
   if (!currentUser) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top,#0f2440_0%,#070b16_45%,#03050a_100%)] px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-10">
+      <main className="min-h-screen bg-app-shell px-4 py-6 text-slate-800 sm:px-6 sm:py-8 lg:px-10">
         <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1800px] items-center justify-center sm:min-h-[calc(100vh-4rem)]">
           <div className="w-full max-w-md">
             <div className="relative overflow-hidden rounded-xl pb-1 text-center">
-              <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">
+              <h1 className="text-2xl font-black tracking-wider text-amber-700 drop-shadow-sm sm:text-3xl">
                 {siteConfig?.siteTitle ?? "SLOSTWIN - AI"}
               </h1>
-              <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">
+              <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-600">
                 {siteConfig?.siteSubtitle ?? "HỆ THỐNG GAME"}
               </p>
               <motion.div
                 aria-hidden="true"
-                className="pointer-events-none absolute -left-24 top-0 h-full w-16 rotate-12 bg-gradient-to-r from-transparent via-white/55 to-transparent blur-[1px]"
+                className="pointer-events-none absolute -left-24 top-0 h-full w-16 rotate-12 bg-gradient-to-r from-transparent via-white/70 to-transparent blur-[1px]"
                 animate={{ x: [-40, 460] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
               />
@@ -160,11 +160,11 @@ export default function App() {
           </div>
         </div>
         {authRedirectLoading ? (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-sky-100/75 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-cyan-200/25 border-t-cyan-300" />
-              <p className="text-sm font-black tracking-[0.18em] text-cyan-100">ĐANG ĐĂNG NHẬP...</p>
-              <p className="text-xs font-semibold tracking-[0.12em] text-white/65">Đang tự động chuyển vào sảnh game</p>
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-sky-300/40 border-t-sky-600" />
+              <p className="text-sm font-black tracking-[0.18em] text-sky-900">ĐANG ĐĂNG NHẬP...</p>
+              <p className="text-xs font-semibold tracking-[0.12em] text-slate-600">Đang tự động chuyển vào sảnh game</p>
             </div>
           </div>
         ) : null}
@@ -173,23 +173,23 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#0f2440_0%,#070b16_45%,#03050a_100%)] px-4 py-8 text-white sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-app-shell px-4 py-8 text-slate-800 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-[1800px]">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black tracking-wider text-brand-gold sm:text-3xl">
+            <h1 className="text-2xl font-black tracking-wider text-amber-700 drop-shadow-sm sm:text-3xl">
               {siteConfig?.siteTitle ?? "SLOSTWIN - AI"}
             </h1>
-            <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-300">
+            <p className="mt-1 text-sm font-medium tracking-[0.2em] text-slate-600">
               {siteConfig?.siteSubtitle ?? "HỆ THỐNG GAME"}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-bold tracking-[0.16em] text-amber-100">
+            <span className="rounded-full bg-amber-100/90 px-3 py-1 text-xs font-bold tracking-[0.16em] text-amber-900 shadow-sm ring-1 ring-amber-300/40">
               VIP {currentUser?.vip ?? 0}
             </span>
-            <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-bold tracking-[0.16em] text-emerald-100">
+            <span className="rounded-full bg-emerald-100/90 px-3 py-1 text-xs font-bold tracking-[0.16em] text-emerald-900 shadow-sm ring-1 ring-emerald-300/40">
               XU {Number(currentUser?.balance ?? 0).toLocaleString()}
             </span>
 
@@ -197,7 +197,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSelectedProviderId(null)}
-                className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold tracking-[0.16em] text-white transition hover:bg-white/10"
+                className="rounded-full border border-sky-400/50 bg-white/70 px-4 py-2 text-xs font-bold tracking-[0.16em] text-slate-800 shadow-sm transition hover:bg-white"
               >
                 QUAY VỀ SẢNH
               </button>
@@ -206,7 +206,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setAdminOpen(true)}
-                className="rounded-full border border-violet-200/25 bg-violet-300/10 px-4 py-2 text-xs font-bold tracking-[0.16em] text-violet-100 transition hover:bg-violet-300/15"
+                className="rounded-full border border-violet-300/50 bg-violet-100/90 px-4 py-2 text-xs font-bold tracking-[0.16em] text-violet-900 shadow-sm transition hover:bg-violet-100"
               >
                 QUẢN TRỊ
               </button>
@@ -217,7 +217,7 @@ export default function App() {
                 await logoutUser();
                 setCurrentUser(null);
               }}
-              className="rounded-full border border-rose-200/20 bg-rose-200/10 px-4 py-2 text-xs font-bold tracking-[0.16em] text-rose-100 transition hover:bg-rose-200/15"
+              className="rounded-full border border-rose-300/50 bg-rose-50/95 px-4 py-2 text-xs font-bold tracking-[0.16em] text-rose-900 shadow-sm transition hover:bg-rose-100"
             >
               ĐĂNG XUẤT
             </button>
@@ -233,7 +233,7 @@ export default function App() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25 }}
             >
-              <h2 className="mb-5 text-xl font-extrabold tracking-[0.18em] text-cyan-300">SẢNH GAME</h2>
+              <h2 className="mb-5 text-xl font-extrabold tracking-[0.18em] text-sky-800">SẢNH GAME</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {providers.map((provider) => (
                   <ProviderCard
@@ -252,17 +252,17 @@ export default function App() {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.25 }}
             >
-              <h2 className="mb-2 text-xl font-extrabold tracking-[0.18em] text-cyan-300">{selectedProvider.name}</h2>
-              <p className="mb-6 text-xs font-semibold tracking-[0.22em] text-slate-300">{selectedProvider.lobbyLabel}</p>
+              <h2 className="mb-2 text-xl font-extrabold tracking-[0.18em] text-sky-800">{selectedProvider.name}</h2>
+              <p className="mb-6 text-xs font-semibold tracking-[0.22em] text-slate-600">{selectedProvider.lobbyLabel}</p>
 
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 items-center gap-3">
-                  <div className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2">
+                  <div className="flex-1 rounded-full border border-sky-300/60 bg-white/60 px-4 py-2 shadow-inner">
                     <input
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
                       placeholder="Tìm game..."
-                      className="w-full bg-transparent text-xs font-bold tracking-[0.16em] text-white placeholder:text-white/35 focus:outline-none"
+                      className="w-full bg-transparent text-xs font-bold tracking-[0.16em] text-slate-800 placeholder:text-slate-400 focus:outline-none"
                       aria-label="Search games"
                     />
                   </div>
@@ -274,13 +274,13 @@ export default function App() {
                       const el = document.getElementById(`game-${pick.id}`);
                       el?.scrollIntoView({ behavior: "smooth", block: "center" });
                     }}
-                    className="rounded-full border border-emerald-200/20 bg-emerald-300/10 px-4 py-2 text-xs font-black tracking-[0.16em] text-emerald-100 transition hover:bg-emerald-300/15"
+                    className="rounded-full border border-emerald-400/45 bg-emerald-100/90 px-4 py-2 text-xs font-black tracking-[0.16em] text-emerald-900 shadow-sm transition hover:bg-emerald-50"
                   >
                     NGẪU NHIÊN
                   </button>
                 </div>
 
-                <div className="text-xs font-bold tracking-[0.16em] text-white/70">
+                <div className="text-xs font-bold tracking-[0.16em] text-slate-600">
                   {filteredGames.length}/{games.length}
                 </div>
               </div>
@@ -292,8 +292,8 @@ export default function App() {
               </div>
 
               {filteredGames.length === 0 ? (
-                <div className="mt-8 rounded-2xl border border-amber-300/30 bg-amber-100/5 p-6 text-center">
-                  <p className="text-sm font-bold tracking-wide text-amber-200">
+                <div className="mt-8 rounded-2xl border border-amber-200/70 bg-amber-50/90 p-6 text-center shadow-sm">
+                  <p className="text-sm font-bold tracking-wide text-amber-900">
                     {games.length === 0 ? "Chưa có dữ liệu game cho sảnh này" : "Không tìm thấy game phù hợp"}
                   </p>
                 </div>
